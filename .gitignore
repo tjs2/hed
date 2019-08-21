@@ -1,5 +1,8 @@
 ## General
 
+# Example files
+examples/*
+
 # Compiled Object files
 *.slo
 *.lo
