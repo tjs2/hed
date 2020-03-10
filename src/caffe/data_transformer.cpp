@@ -401,7 +401,7 @@ void DataTransformer<Dtype>::LocTransform(const cv::Mat& cv_img,
   Dtype* transformed_data = transformed_blob->mutable_cpu_data();
   int top_index;
   for (int h = 0; h < height; ++h) {
-    const uchar* ptr = cv_color_converted_img.ptr<uchar>(h);
+    const float* ptr = cv_color_converted_img.ptr<float>(h);
     int img_index = 0;
     for (int w = 0; w < width; ++w) {
       for (int c = 0; c < img_channels; ++c) {
