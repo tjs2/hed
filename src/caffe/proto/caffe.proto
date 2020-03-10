@@ -399,6 +399,11 @@ message TransformationParameter {
     dRdGdB = 5;
     RGBdRdGdB = 6;
     HSV = 7;
+    YUV = 8;
+    YIQ = 9;
+    YPbPr = 10;
+    YDbDr = 11;
+    YCbCr = 12;
   }
   // For data pre-processing, we can do simple scaling and subtracting the
   // data mean, if provided. Note that the mean subtraction is always carried

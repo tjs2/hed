@@ -11,6 +11,14 @@ namespace caffe
   void convert_BGR_dRdGdB_internal(const cv::Mat bgrSplitted[3], cv::Mat& dR, cv::Mat& dG, cv::Mat& dB);
   void convert_BGR_HSV(const cv::Mat bgr, cv::Mat& HSV);
 
+  void convert_BGR_YUV(const cv::Mat bgr, cv::Mat& converted);
+  void convert_BGR_YIQ(const cv::Mat bgr, cv::Mat& converted);
+  void convert_BGR_YPbPr(const cv::Mat bgr, cv::Mat& converted);
+  void convert_BGR_YDbDr(const cv::Mat bgr, cv::Mat& converted);
+  void convert_BGR_YCbCr(const cv::Mat bgr, cv::Mat& converted);
+
+  void bgrTransformation(const cv::Mat bgr, float transfomMatrix[3][3], float alpha[3], float delta[3], cv::Mat& transfomed);
+
   void convert_color(const cv::Mat bgr, cv::Mat& converted, TransformationParameter_ColorTransFormation color)
   {
     switch(color)
@@ -36,6 +44,25 @@ namespace caffe
       case TransformationParameter_ColorTransFormation_HSV:
         convert_BGR_HSV(bgr, converted);
         break;
+
+
+      case TransformationParameter_ColorTransFormation_YUV:
+        convert_BGR_YUV(bgr, converted);
+        break;
+      case TransformationParameter_ColorTransFormation_YIQ:
+        convert_BGR_YIQ(bgr, converted);
+        break;
+      case TransformationParameter_ColorTransFormation_YPbPr:
+        convert_BGR_YPbPr(bgr, converted);
+        break;
+      case TransformationParameter_ColorTransFormation_YDbDr:
+        convert_BGR_YDbDr(bgr, converted);
+        break;
+      case TransformationParameter_ColorTransFormation_YCbCr:
+        convert_BGR_YCbCr(bgr, converted);
+        break;
+
+
       case TransformationParameter_ColorTransFormation_RGB:
       default:
         bgr.convertTo(converted, CV_32F, 1.0);
@@ -43,6 +70,82 @@ namespace caffe
     }
   }
 
+  void convert_BGR_YUV(const cv::Mat bgr, cv::Mat& ret) {
+    float transfomMatrix[3][3] = {{ 0.299,  0.587,  0.114},
+                                  {-0.147, -0.289,  0.436},
+                                  { 0.615, -0.515, -0.100}};
+    float alpha[3] = {1.0, 1.0, 1.0};
+    float delta[3] = {0.0, 0.0, 0.0};
+
+    bgrTransformation(bgr, transfomMatrix, alpha, delta, ret);
+  }
+
+  void convert_BGR_YIQ(const cv::Mat bgr, cv::Mat& ret) {
+    float transfomMatrix[3][3] = {{0.299,     0.587,     0.114   },
+                                  {0.595716, -0.274453, -0.321263},
+                                  {0.211456, -0.522591,  0.311135}};
+    float alpha[3] = {1.0, 1.0, 1.0};
+    float delta[3] = {0.0, 0.0, 0.0};
+
+    bgrTransformation(bgr, transfomMatrix, alpha, delta, ret);
+  }
+
+  void convert_BGR_YPbPr(const cv::Mat bgr, cv::Mat& ret) {
+    float transfomMatrix[3][3] = {{ 0.299,      0.587,     0.114   },
+                                  {-0.1687367, -0.331264,  0.5     },
+                                  { 0.5,       -0.418688, -0.081312}};
+    float alpha[3] = {1.0, 1.0, 1.0};
+    float delta[3] = {0.0, 0.0, 0.0};
+
+    bgrTransformation(bgr, transfomMatrix, alpha, delta, ret);
+  }
+
+  void convert_BGR_YDbDr(const cv::Mat bgr, cv::Mat& ret) {
+    float transfomMatrix[3][3] = {{ 0.299,  0.587, 0.114},
+                                  {-0.450, -0.883, 1.333},
+                                  {-1.333,  1.116, 0.217}};
+    float alpha[3] = {1.0, 1.0, 1.0};
+    float delta[3] = {0.0, 0.0, 0.0};
+
+    bgrTransformation(bgr, transfomMatrix, alpha, delta, ret);
+  }
+
+  void convert_BGR_YCbCr(const cv::Mat bgr, cv::Mat& ret) {
+    float transfomMatrix[3][3] = {{ 65.481, 128.553,  24.966 },
+                                  {-37.797, -74.203, 112.0   },
+                                  {112.0,   -93.786, -18.214}};
+    float alpha[3] = { 1.0,   1.0,   1.0};
+    float delta[3] = {16.0, 128.0, 128.0};
+
+    bgrTransformation(bgr, transfomMatrix, alpha, delta, ret);
+  }
+
+  void bgrTransformation(const cv::Mat bgr, float transfomMatrix[3][3], float alpha[3], float delta[3], cv::Mat& transfomed) {
+    std::vector<cv::Mat> array_to_merge;
+    cv::Mat bgr32F;
+    cv::Mat bgrSplitted[3]; // 0 - B, 1 - G, 2 - R
+
+    bgr.convertTo(bgr32F, CV_32F, 1.0/255.0);
+    cv::split(bgr32F, bgrSplitted);
+
+    cv::Mat channel1 = alpha[0] * ( bgrSplitted[2] * transfomMatrix[0][0] + bgrSplitted[1] * transfomMatrix[0][1] + bgrSplitted[0] * transfomMatrix[0][2] ) + delta[0];
+    cv::Mat channel2 = alpha[1] * (-bgrSplitted[2] * transfomMatrix[1][0] - bgrSplitted[1] * transfomMatrix[1][1] + bgrSplitted[0] * transfomMatrix[1][2] ) + delta[1];
+    cv::Mat channel3 = alpha[2] * ( bgrSplitted[2] * transfomMatrix[2][0] - bgrSplitted[1] * transfomMatrix[2][1] - bgrSplitted[0] * transfomMatrix[2][2] ) + delta[2];
+
+    array_to_merge.push_back(channel1);
+    array_to_merge.push_back(channel2);
+    array_to_merge.push_back(channel3);
+
+    cv::merge(array_to_merge, transfomed);
+
+    bgr32F.release();
+    bgrSplitted[0].release();
+    bgrSplitted[1].release();
+    bgrSplitted[2].release();
+    channel1.release();
+    channel2.release();
+    channel3.release();
+  }
 
   void convert_BGR_LAB(const cv::Mat bgr, cv::Mat& Lab)
   {
