@@ -44,6 +44,9 @@ examples/*
 *.*project
 .settings
 
+# VSCode settings
+.vscode/*
+
 # QtCreator files
 *.user
 
