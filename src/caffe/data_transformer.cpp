@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "caffe/data_transformer.hpp"
+#include "caffe/color_convert.hpp"
 #include "caffe/util/io.hpp"
 #include "caffe/util/math_functions.hpp"
 #include "caffe/util/rng.hpp"
@@ -33,6 +34,12 @@ DataTransformer<Dtype>::DataTransformer(const TransformationParameter& param,
     for (int c = 0; c < param_.mean_value_size(); ++c) {
       mean_values_.push_back(param_.mean_value(c));
     }
+  }
+
+  if (param_.has_color_transformation()) {
+    LOG(INFO) << "Selected color transformation: " << param_.color_transformation();
+  } else {
+    LOG(INFO) << "Not selected color transformation";
   }
 }
 
@@ -381,10 +388,20 @@ void DataTransformer<Dtype>::LocTransform(const cv::Mat& cv_img,
 
   CHECK(cv_cropped_img.data);
 
+  TransformationParameter_ColorTransFormation color = TransformationParameter_ColorTransFormation_RGB;
+  if (param_.has_color_transformation()) {
+    color = param_.color_transformation();
+  }
+
+  cv::Mat cv_color_converted_img;
+  convert_color(cv_cropped_img, cv_color_converted_img, color);
+
+  CHECK(cv_color_converted_img.data);
+
   Dtype* transformed_data = transformed_blob->mutable_cpu_data();
   int top_index;
   for (int h = 0; h < height; ++h) {
-    const uchar* ptr = cv_cropped_img.ptr<uchar>(h);
+    const float* ptr = cv_color_converted_img.ptr<float>(h);
     int img_index = 0;
     for (int w = 0; w < width; ++w) {
       for (int c = 0; c < img_channels; ++c) {

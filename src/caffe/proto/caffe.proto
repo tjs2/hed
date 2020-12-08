@@ -390,6 +390,21 @@ message LayerParameter {
 // Message that stores parameters used to apply transformation
 // to the data layer's data
 message TransformationParameter {
+  enum ColorTransFormation {
+    RGB = 0;
+    LAB = 1;
+    LUV = 2;
+    YO1O2 = 3;
+    I1I2I3 = 4;
+    dRdGdB = 5;
+    RGBdRdGdB = 6;
+    HSV = 7;
+    YUV = 8;
+    YIQ = 9;
+    YPbPr = 10;
+    YDbDr = 11;
+    YCbCr = 12;
+  }
   // For data pre-processing, we can do simple scaling and subtracting the
   // data mean, if provided. Note that the mean subtraction is always carried
   // out before scaling.
@@ -408,6 +423,7 @@ message TransformationParameter {
   optional bool force_color = 6 [default = false];
   // Force the decoded image to have 1 color channels.
   optional bool force_gray = 7 [default = false];
+  optional ColorTransFormation color_transformation = 8 [default = RGB];
 }
 
 // Message that stores parameters shared by loss layers
